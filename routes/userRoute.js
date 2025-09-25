@@ -20,7 +20,8 @@ router.post("/login", login);
 router.post("/profile", authenticateJWT, getProfile)
 
 // Protected routes
-router.post("/logout", authenticateJWT, logout);
+// router.post("/logout", authenticateJWT, logout);
+router.post("/logout", logout);
 router.patch("/reset-password", authenticateJWT, resetPassword);
 
 // Admin routes (example)
