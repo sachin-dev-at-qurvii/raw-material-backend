@@ -18,6 +18,8 @@ const sendNotificationToEmail = async (req, res, next) => {
             auth: {
                 user: EMAIL_ADDRESS,
                 pass: EMAIL_PASSWORD,
+                logger: true,
+                debug: true,
             }
         });
 
@@ -211,3 +213,4 @@ const sendNotificationToEmail = async (req, res, next) => {
 
 
 module.exports = sendNotificationToEmail;
+
