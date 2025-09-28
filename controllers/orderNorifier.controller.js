@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 const ApiResponse = require("../utils/ApiResponse.js");
+const axios = require("axios");
 const ApiError = require("../utils/ApiError.js");
 
 const EMAIL_ADDRESS = "dev@qurvii.com";
@@ -18,9 +19,9 @@ const sendNotificationToEmail = async (req, res, next) => {
             auth: {
                 user: EMAIL_ADDRESS,
                 pass: EMAIL_PASSWORD,
-                logger: true,
-                debug: true,
-            }
+            },
+            logger: true,
+            debug: true
         });
 
         // const payload = {
@@ -212,5 +213,53 @@ const sendNotificationToEmail = async (req, res, next) => {
 }
 
 
-module.exports = sendNotificationToEmail;
+// controllers/zohoMail.controller.js
+const ZOHO_ACCOUNT_ID = process.env.ZOHO_ACCOUNT_ID; // e.g. 123456789
+const ZOHO_ACCESS_TOKEN = process.env.ZOHO_ACCESS_TOKEN;
+// 👉 Access token को refresh करने वाला flow implement करना पड़ेगा (refresh token से)
 
+const sendZohoMail = async (req, res, next) => {
+    try {
+        const { fromAddress, toAddress, ccAddress, bccAddress, subject, content } = req.body;
+
+        if (!fromAddress || !toAddress || !subject || !content) {
+            return next(new ApiError(400, "fromAddress, toAddress, subject and content are required"));
+        }
+
+        const apiUrl = `https://mail.zoho.com/api/accounts/${ZOHO_ACCOUNT_ID}/messages`;
+
+        const response = await axios.post(
+            apiUrl,
+            {
+                fromAddress,
+                toAddress,
+                ccAddress,
+                bccAddress,
+                subject,
+                content,
+                askReceipt: "yes",
+            },
+            {
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                    Authorization: `Zoho-oauthtoken ${ZOHO_ACCESS_TOKEN}`,
+                },
+            }
+        );
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, response.data, "Mail sent successfully"));
+    } catch (error) {
+        console.error("Zoho Mail Error:", error.response?.data || error.message);
+        return next(
+            new ApiError(500, error.response?.data?.message || "Failed to send mail")
+        );
+    }
+};
+
+
+
+
+module.exports = { sendNotificationToEmail, sendZohoMail };
