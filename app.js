@@ -9,7 +9,7 @@ const styleRoutes = require("./routes/styleRoute");
 const userRoutes = require("./routes/userRoute");
 const relationShipRoutes = require("./routes/meterAndkgRelationShip.routes.js");
 const fabricAverageRoutes = require("./routes/fabricAvg.routes.js")
-const orderNotifierRoute = require("./routes/orderNotifier.routes.js");
+
 const discountRoutes = require("./routes/discount.routes.js");
 const app = express();
 
@@ -38,7 +38,7 @@ app.use("/api/v1/relation", relationShipRoutes);
 app.use("/api/v1/average", fabricAverageRoutes);
 
 // order notifier mail 
-app.use("/api/v1/order", orderNotifierRoute);
+
 
 
 // discount routes
