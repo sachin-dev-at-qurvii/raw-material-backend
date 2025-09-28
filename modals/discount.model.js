@@ -16,6 +16,10 @@ const discountSchema = new mongoose.Schema({
     mrp: {
         type: Number,
         required: true
+    },
+    current_selling_price: {
+        type: Number,
+        required: true
     }
 });
 

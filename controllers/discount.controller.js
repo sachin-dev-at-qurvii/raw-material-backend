@@ -56,10 +56,11 @@ const bulkUpsertDiscounts = async (req, res, next) => {
         let ignoredCount = 0;
 
         for (const item of payload) {
-            let { style_number, style_name, cost, mrp } = item;
+            let { style_number, style_name, cost, mrp, current_selling_price } = item;
 
             // Ignore invalid style_number
-            if (!style_number || isNaN(Number(style_number)) || !mrp || isNaN(Number(mrp)) || !cost || isNaN(Number(cost))) {
+            if (!style_number || isNaN(Number(style_number)) || !mrp || isNaN(Number(mrp)) || !cost
+                || isNaN(Number(cost) || !current_selling_price || isNaN(Number(current_selling_price)))) {
                 ignoredCount++;
                 continue;
             }
@@ -70,11 +71,12 @@ const bulkUpsertDiscounts = async (req, res, next) => {
             if (!style_name) style_name = "Unknown";
             if (!cost) cost = 0;
             if (!mrp) mrp = 0;
+            if (!current_selling_price) current_selling_price = 0;
 
             operations.push({
                 updateOne: {
                     filter: { style_number },
-                    update: { $set: { style_name, cost, mrp } },
+                    update: { $set: { style_name, cost, mrp, current_selling_price } },
                     upsert: true // if not exist, insert
                 }
             });
