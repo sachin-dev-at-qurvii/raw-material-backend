@@ -219,7 +219,7 @@ const getStyle = async (req, res, next) => {
         {
           $unwind: {
             path: "$fabricAvgDetails",
-            preserveNullAndEmptyArrays: true // taaki fabricAvg na mile to bhi style aaye
+            preserveNullAndEmptyArrays: true
           }
         },
         {

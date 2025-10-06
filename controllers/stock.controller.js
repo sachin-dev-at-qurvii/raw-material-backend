@@ -30,54 +30,6 @@ const getStock = async (req, res, next) => {
 
 
 
-// const createStock = async (req, res, next) => {
-//   try {
-//     const data = req.body;
-
-//     if (!Array.isArray(data) || data.length === 0) {
-//       return next(new ApiError(400, "Payload must be non-empty array"));
-//     }
-
-//     // incomming fabric numbers
-//     const fabricNumbers = data.map((fab) => fab.fabricNumber);
-
-//     // DB me already kaunse fabricNumbers exist karte hain
-//     const existingStocks = await Stock.find(
-//       { fabricNumber: { $in: fabricNumbers } },
-//       { fabricNumber: 1, _id: 0 }
-//     );
-
-//     const existingFabricNumbers = new Set(
-//       existingStocks.map((stock) => stock.fabricNumber)
-//     );
-
-//     // unique fabric numbers
-//     const newStocks = data.filter(
-//       (fab) => !existingFabricNumbers.has(fab.fabricNumber)
-//     );
-
-//     if (newStocks.length === 0) {
-//       return res.status(200).json(
-//         new ApiResponse(200, "All fabricNumbers already exist, nothing to insert", {
-//           created: [],
-//           skipped: [...existingFabricNumbers],
-//         })
-//       );
-//     }
-
-//     // Insert only new unique stocks
-//     const createdStocks = await Stock.insertMany(newStocks);
-
-//     res.status(201).json(
-//       new ApiResponse(201, "Stocks created successfully", {
-//         created: createdStocks,
-//         skipped: [...existingFabricNumbers],
-//       })
-//     );
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 
 const createStock = async (req, res, next) => {
   try {
