@@ -11,6 +11,7 @@ const relationShipRoutes = require("./routes/meterAndkgRelationShip.routes.js");
 const fabricAverageRoutes = require("./routes/fabricAvg.routes.js")
 const fabricRateRoutes = require("./routes/fabricRate.routes.js");
 const discountRoutes = require("./routes/discount.routes.js");
+const orderidMappedRoutes = require("./routes/mappedOrderWithStyleNumber.routes.js");
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -39,7 +40,8 @@ app.use("/api/v1/average", fabricAverageRoutes);
 
 app.use("/api/v1/fabric-rate", fabricRateRoutes);
 
-// order notifier mail 
+// order id mapping styles route
+app.use("/api/v1/order-id-mapping", orderidMappedRoutes)
 
 
 
