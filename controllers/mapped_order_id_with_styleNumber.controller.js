@@ -48,5 +48,18 @@ const getMappedOrderIdsStyleNumber = async (req, res, next) => {
     }
 }
 
+const getRackSpaceDetails = async (req, res, next) => {
+    const { style_number } = req.query;
+    try {
+        const rackSpaceDetails = await MappedOrderId.findOne({ style_number: Number(style_number) });
+        if (!rackSpaceDetails) {
+            return next(new ApiError(404, "Rack Space details not found"));
+        }
+        res.status(200).json(new ApiResponse(200, rackSpaceDetails, "Rack Space details fetched successfully."));
+    } catch (error) {
+        next(error);
+    }
+}
 
-module.exports = { upsertMappedOrderIdWithStyleNumber, getMappedOrderIdsStyleNumber }
+
+module.exports = { upsertMappedOrderIdWithStyleNumber, getMappedOrderIdsStyleNumber,getRackSpaceDetails }
