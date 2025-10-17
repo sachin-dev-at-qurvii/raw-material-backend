@@ -95,6 +95,34 @@ const updateStock = async (req, res, next) => {
   }
 }
 
+
+// ******************** bulk update ****************************************
+const updateMultipleStocks = async (req, res, next) => {
+  try {
+    const { updates } = req.body;
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      throw new ApiError(400, "No updates provided");
+    }
+
+    // Create bulk operations array
+    const bulkOps = updates.map(item => ({
+      updateOne: {
+        filter: { _id: item.id },
+        update: { $set: { availableStock: item.availableStock } },
+      },
+    }));
+
+    const result = await Stock.bulkWrite(bulkOps, { ordered: false });
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Bulk stock update successful", result));
+  } catch (error) {
+    next(error);
+  }
+};
+
 // delete stock
 const deleteStock = async (req, res, next) => {
   const stockId = req.params.id;
@@ -107,4 +135,5 @@ const deleteStock = async (req, res, next) => {
   res.status(200).json(new ApiResponse(200, `${deletedStock.fabricNumber} deleted successfully`, deletedStock.fabricNumber))
 
 }
-module.exports = { getStock, createStock, updateStock, deleteStock };
+module.exports = { getStock, createStock, updateStock, deleteStock,updateMultipleStocks };
+
