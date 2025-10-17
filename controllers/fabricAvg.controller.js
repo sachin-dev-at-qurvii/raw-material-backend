@@ -50,49 +50,51 @@ const ApiResponse = require("../utils/ApiResponse.js");
 const upsertFabriPatterns = async (req, res, next) => {
     try {
         const payload = req.body;
+
         if (!Array.isArray(payload) || payload.length === 0) {
             return next(new ApiError(400, "Payload must be non-empty array"));
         }
-        let addedCount = 0;
-        let updatedCount = 0;
-        let results = [];
 
-        for (const item of payload) {
-            const { patternNumber, styleImage, fabrics, accessories, style_number } = item;
-            if (!style_number || !patternNumber) {
-                continue;
-            }
-            const existing = await FabricAvg.findOne({ style_number });
-            if (existing) {
-                existing.styleImage = styleImage || existing.styleImage;
-                existing.patternNumber = patternNumber || existing.patternNumber;
-                existing.fabrics = fabrics || existing.fabrics;
-                existing.accessories = accessories || existing.accessories;
-                await existing.save();
-                updatedCount++;
-                results.push({ patternNumber, status: "updated" });
-            } else {
-                const newPattern = await FabricAvg.create({
-                    style_number,
-                    patternNumber,
-                    styleImage,
-                    fabrics,
-                    accessories
-                });
-                addedCount++;
-                results.push({ patternNumber, status: "added" });
-            }
+        // prepare bulk operations
+        const operations = payload
+            .filter(item => item.style_number && item.patternNumber) // skip invalid
+            .map(item => ({
+                updateOne: {
+                    filter: { style_number: item.style_number },
+                    update: {
+                        $set: {
+                            patternNumber: item.patternNumber,
+                            styleImage: item.styleImage,
+                            fabrics: item.fabrics,
+                            accessories: item.accessories
+                        }
+                    },
+                    upsert: true // insert if not exist
+                }
+            }));
+
+        if (operations.length === 0) {
+            return next(new ApiError(400, "No valid items to process."));
         }
 
-        return res.status(200).json(new ApiResponse(200, "Fabric avg added/updated successfully.", {
-            addedCount,
-            updatedCount,
-            results,
-        }))
+        const result = await FabricAvg.bulkWrite(operations, { ordered: false });
+
+        const addedCount = result.upsertedCount || 0;
+        const updatedCount = result.modifiedCount || 0;
+
+        return res.status(200).json(
+            new ApiResponse(200, "Fabric avg added/updated successfully.", {
+                addedCount,
+                updatedCount,
+                totalProcessed: operations.length,
+            })
+        );
+
     } catch (error) {
         next(error);
     }
-}
+};
+
 
 
 const getFabricPatterns = async (req, res, next) => {
@@ -109,3 +111,4 @@ const getFabricPatterns = async (req, res, next) => {
 
 
 module.exports = { getFabricPatterns, upsertFabriPatterns }
+
