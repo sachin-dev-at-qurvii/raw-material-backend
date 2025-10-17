@@ -40,6 +40,10 @@ const accessoriesSchema = new mongoose.Schema({
 )
 
 const fabricAvgSchema = new mongoose.Schema({
+    style_number: {
+        type: Number,
+        required: true,
+    },
     patternNumber: {
         type: String,
         required: true,
