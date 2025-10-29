@@ -25,7 +25,9 @@ const mappedOrderIdWithStyleNumberShema = new mongoose.Schema({
         type: Number,
         default: 0
     }
-});
+},
+    { timestamps: true }
+);
 
 const MappedOrderId = mongoose.model("MappedOrderId", mappedOrderIdWithStyleNumberShema);
 module.exports = MappedOrderId;

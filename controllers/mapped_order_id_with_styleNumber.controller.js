@@ -62,4 +62,4 @@ const getRackSpaceDetails = async (req, res, next) => {
 }
 
 
-module.exports = { upsertMappedOrderIdWithStyleNumber, getMappedOrderIdsStyleNumber,getRackSpaceDetails }
+module.exports = { upsertMappedOrderIdWithStyleNumber, getMappedOrderIdsStyleNumber, getRackSpaceDetails }

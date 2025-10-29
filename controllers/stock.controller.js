@@ -1,4 +1,5 @@
 const Stock = require("../modals/stock.modal");
+const Stock2 = require("../modals/stock2.modal");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 
@@ -78,26 +79,69 @@ const createStock = async (req, res, next) => {
 };
 
 
+// const updateStock = async (req, res, next) => {
+//   try {
+//     const stockId = req.params.id;
+//     const updatedData = req.body;
+//     const stock1 = await Stock.findOne(stockId);
+//     const updatedStock = await Stock.findByIdAndUpdate(stockId, updatedData, { new: true, runValidators: true });
+//     const stock2 = await Stock2.findOne({ fabricNumber: stock1?.fabricNumber })
+
+//     if (stock2) {
+//       stock2.availableStock = 0;
+//       await stock2.save()
+//     }
+
+//     if (!updatedData) {
+//       throw new ApiError(404, "Stock not found");
+//     }
+
+//     res.status(200).json(new ApiResponse(200, "Stock updated successfully", updatedStock));
+//   } catch (error) {
+//     next(error)
+//   }
+// }
+
+
 const updateStock = async (req, res, next) => {
   try {
     const stockId = req.params.id;
     const updatedData = req.body;
 
-    const updatedStock = await Stock.findByIdAndUpdate(stockId, updatedData, { new: true, runValidators: true });
-
-    if (!updatedData) {
+    // 1️⃣ Find the existing stock
+    const stock1 = await Stock.findById(stockId);
+    if (!stock1) {
       throw new ApiError(404, "Stock not found");
     }
 
-    res.status(200).json(new ApiResponse(200, "Stock updated successfully", updatedStock));
+    // 2️⃣ Update stock with validation
+    const updatedStock = await Stock.findByIdAndUpdate(stockId, updatedData, {
+      new: true,
+      runValidators: true,
+    });
+
+    // 3️⃣ Find related Stock2 using fabricNumber
+    const stock2 = await Stock2.findOne({ fabricNumber: stock1.fabricNumber });
+
+    if (stock2) {
+      stock2.availableStock = 0; // if this is intentional
+      await stock2.save();
+    }
+
+    // 4️⃣ Send success response
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Stock updated successfully", updatedStock));
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
+
 
 
 // ******************** bulk update ****************************************
 const updateMultipleStocks = async (req, res, next) => {
+
   try {
     const { updates } = req.body;
 
@@ -135,5 +179,4 @@ const deleteStock = async (req, res, next) => {
   res.status(200).json(new ApiResponse(200, `${deletedStock.fabricNumber} deleted successfully`, deletedStock.fabricNumber))
 
 }
-module.exports = { getStock, createStock, updateStock, deleteStock,updateMultipleStocks };
-
+module.exports = { getStock, createStock, updateStock, deleteStock, updateMultipleStocks };

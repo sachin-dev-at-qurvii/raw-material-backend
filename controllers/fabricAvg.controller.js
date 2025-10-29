@@ -14,13 +14,14 @@ const ApiResponse = require("../utils/ApiResponse.js");
 //         let results = [];
 
 //         for (const item of payload) {
-//             const { patternNumber, styleImage, fabrics, accessories } = item;
-//             if (!patternNumber) {
+//             const { patternNumber, styleImage, fabrics, accessories, style_number } = item;
+//             if (!style_number || !patternNumber) {
 //                 continue;
 //             }
-//             const existing = await FabricAvg.findOne({ patternNumber });
+//             const existing = await FabricAvg.findOne({ style_number });
 //             if (existing) {
 //                 existing.styleImage = styleImage || existing.styleImage;
+//                 existing.patternNumber = patternNumber || existing.patternNumber;
 //                 existing.fabrics = fabrics || existing.fabrics;
 //                 existing.accessories = accessories || existing.accessories;
 //                 await existing.save();
@@ -28,6 +29,7 @@ const ApiResponse = require("../utils/ApiResponse.js");
 //                 results.push({ patternNumber, status: "updated" });
 //             } else {
 //                 const newPattern = await FabricAvg.create({
+//                     style_number,
 //                     patternNumber,
 //                     styleImage,
 //                     fabrics,
@@ -47,6 +49,7 @@ const ApiResponse = require("../utils/ApiResponse.js");
 //         next(error);
 //     }
 // }
+
 const upsertFabriPatterns = async (req, res, next) => {
     try {
         const payload = req.body;
@@ -95,8 +98,6 @@ const upsertFabriPatterns = async (req, res, next) => {
     }
 };
 
-
-
 const getFabricPatterns = async (req, res, next) => {
     try {
         const fabrics = await FabricAvg.find();
@@ -109,6 +110,4 @@ const getFabricPatterns = async (req, res, next) => {
     }
 }
 
-
 module.exports = { getFabricPatterns, upsertFabriPatterns }
-

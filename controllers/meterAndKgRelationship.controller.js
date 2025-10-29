@@ -96,6 +96,22 @@ const addMeterAndKgRelationship = async (req, res, next) => {
     }
 };
 
+const getMeterAndKgRelationShipByFabricNumber = async (req, res, next) => {
+    try {
+        const { fabric_number } = req.query;
+        if (!fabric_number) {
+            return next(new ApiError(400, "fabric_number required"));
+        }
+        const relationDetails = await MeterAndKgRelationShip.findOne({ fabric_number });
+        if (!relationDetails) {
+            return next(new ApiError(404, "Relationship not found"));
+        }
+        return res.status(200).json(new ApiResponse(200, "Relationship details fetched successfully.", relationDetails));
+    } catch (error) {
+        next(error);
+    }
+}
+
 const getMeterAndKgRelationshiop = async (req, res, next) => {
     try {
         const records = await MeterAndKgRelationShip.find();
@@ -108,4 +124,4 @@ const getMeterAndKgRelationshiop = async (req, res, next) => {
     }
 }
 
-module.exports = { addMeterAndKgRelationship, getMeterAndKgRelationshiop };
+module.exports = { addMeterAndKgRelationship, getMeterAndKgRelationshiop, getMeterAndKgRelationShipByFabricNumber };
