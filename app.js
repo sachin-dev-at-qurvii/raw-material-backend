@@ -5,7 +5,10 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./db/connectDB");
 const globalErrorHandler = require("./middlewares/globalErrorHandler");
 const stockRoutes = require("./routes/stockRoute");
-const styleRoutes = require("./routes/styleRoute");
+
+// const styleRoutes = require("./routes/styleRoute");
+const modifiedStyleRoutes = require("./routes/modifiedStyle.routes.js");
+
 const userRoutes = require("./routes/userRoute");
 const relationShipRoutes = require("./routes/meterAndkgRelationShip.routes.js");
 const fabricAverageRoutes = require("./routes/fabricAvg.routes.js")
@@ -13,6 +16,9 @@ const fabricRateRoutes = require("./routes/fabricRate.routes.js");
 const discountRoutes = require("./routes/discount.routes.js");
 const orderidMappedRoutes = require("./routes/mappedOrderWithStyleNumber.routes.js");
 const stock2Routes = require("./routes/stock2.routes.js");
+
+
+const accessoryRoutes = require("./routes/accessory.routes.js");
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -29,9 +35,14 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }))
 // route middlewares setting
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/stock", stockRoutes);
-app.use("/api/v1/style-details", styleRoutes);
+
+// app.use("/api/v1/style-details", styleRoutes);
+app.use("/api/v1/style-details", modifiedStyleRoutes);
+
 app.use("/api/v1/relation", relationShipRoutes);
 app.use("/api/v1/average", fabricAverageRoutes);
+
+app.use("/api/v1/accessory", accessoryRoutes);
 
 app.use("/api/v1/stock2", stock2Routes);
 

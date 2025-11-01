@@ -4,9 +4,22 @@ const fabricSchema = new mongoose.Schema({
   fabric_no: { type: Number },
   fabric_name: { type: String },
   fabric_image: { type: String },
-  average_xxs_m: { type: Number, default: 0 },
-  average_l_5xl: { type: Number, default: 0 },
 });
+
+const accessorySchema = new mongoose.Schema({
+  accessory_no: {
+    type: String,
+  },
+  accessory_name: {
+    type: String,
+  },
+  accessory_type: {
+    type: String,
+  },
+  accessory_image: {
+    type: String,
+  }
+})
 
 const styleSchema = new mongoose.Schema({
   styleNumber: {
@@ -21,10 +34,12 @@ const styleSchema = new mongoose.Schema({
     type: String,
   },
   fabrics: [fabricSchema], // Array of fabrics
-  accessories: [
-    { accessory_no: { type: Number } } // Array of accessories
-  ],
-});
+
+  accessories: [accessorySchema], // Array of accessories
+},
+  {
+    timestamps: true
+  });
 
 const Style = mongoose.model("Style", styleSchema);
 module.exports = Style;

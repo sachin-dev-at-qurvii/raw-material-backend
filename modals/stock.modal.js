@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const stockSchema = new mongoose.Schema({
     fabricName: {
         type: String,
@@ -23,6 +22,8 @@ const stockSchema = new mongoose.Schema({
         type: String,
         default: "Vender"
     }
+}, {
+    timestamps: true
 });
 
 const Stock = mongoose.model("Stock", stockSchema);

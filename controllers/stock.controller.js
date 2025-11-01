@@ -107,6 +107,7 @@ const updateStock = async (req, res, next) => {
   try {
     const stockId = req.params.id;
     const updatedData = req.body;
+    const { fabric_source } = req.query;
 
     // 1️⃣ Find the existing stock
     const stock1 = await Stock.findById(stockId);
@@ -123,7 +124,7 @@ const updateStock = async (req, res, next) => {
     // 3️⃣ Find related Stock2 using fabricNumber
     const stock2 = await Stock2.findOne({ fabricNumber: stock1.fabricNumber });
 
-    if (stock2) {
+    if (stock2 && fabric_source === "Store2") {
       stock2.availableStock = 0; // if this is intentional
       await stock2.save();
     }

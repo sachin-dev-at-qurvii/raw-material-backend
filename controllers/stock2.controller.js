@@ -58,6 +58,7 @@ const bulkCreateOrUpdateStock = async (req, res) => {
                     fabricName: item.fabricName,
                     fabricNumber: item.fabricNumber,
                     location: item.location || "Default",
+                    styleNumbers: item.styleNumbers || []
                 },
                 update: {
                     $set: {
