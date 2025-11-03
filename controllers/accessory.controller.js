@@ -91,31 +91,34 @@ const getAccessoryById = async (req, res, next) => {
 const updateAccessory = async (req, res, next) => {
     try {
         const { accessory_number } = req.params;
-        const updates = req.body;
+        const { stock_unit } = req.body;
 
         if (!accessory_number) {
-            throw new ApiError(400, "Accessory number are required in params");
+            throw new ApiError(400, "Accessory number is required in params");
         }
 
-        const updatedAccessory = await Accessory.findOneAndUpdate(
+        if (stock_unit === undefined) {
+            throw new ApiError(400, "stock_unit is required in body");
+        }
+
+        // Update all accessories having the same accessory_number
+        const result = await Accessory.updateMany(
             { accessory_number },
-            { $set: updates },
-            { new: true, runValidators: true }
+            { $set: { stock_unit } }
         );
 
-        if (!updatedAccessory) {
-            throw new ApiError(404, "Accessory not found for given style and accessory number");
+        // result looks like: { acknowledged: true, matchedCount: X, modifiedCount: Y }
+        if (result.matchedCount === 0) {
+            throw new ApiError(404, "No accessories found with given accessory_number");
         }
 
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(
-                    200,
-                    updatedAccessory,
-                    "Accessory updated successfully"
-                )
-            );
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                result,
+                "Stock updated successfully for all matching accessories"
+            )
+        );
     } catch (error) {
         next(error);
     }
@@ -124,7 +127,142 @@ const updateAccessory = async (req, res, next) => {
 
 
 
+
+// ******************************* UPDATE ACCESSORY STOCK BY STYLE NUMBERS *******************************
+
+console.log("first")
+// const updateAccessoryByStyleNumber = async (req, res, next) => {
+//     try {
+//         const styleNumbers = req.body;
+
+//         if (!Array.isArray(styleNumbers) || styleNumbers.length === 0) {
+//             return next(new ApiError(400, "Style numbers must be a non-empty array"));
+//         }
+
+//         // Find all accessories matching the given style numbers
+//         const accessories = await Accessory.find({
+//             style_number: { $in: styleNumbers }
+//         });
+
+//         if (accessories.length === 0) {
+//             return next(new ApiError(404, "No accessories found for given style numbers"));
+//         }
+
+//         // Filter out items whose stock_unit is already 0 or less
+//         const validAccessories = accessories.filter(acc => acc.stock_unit > 0);
+
+//         if (validAccessories.length === 0) {
+//             return next(new ApiError(400, "All given accessories are out of stock"));
+//         }
+
+//         // Prepare bulk operations only for valid ones
+//         const operations = validAccessories.map(acc => ({
+//             updateOne: {
+//                 filter: { style_number: acc.style_number },
+//                 update: { $inc: { stock_unit: -1 } }
+//             }
+//         }));
+
+//         const result = await Accessory.bulkWrite(operations);
+
+//         return res.status(200).json(
+//             new ApiResponse(
+//                 200,
+//                 {
+//                     updatedCount: result.modifiedCount,
+//                     skippedCount: styleNumbers.length - validAccessories.length,
+//                 },
+//                 "Accessory stocks updated successfully"
+//             )
+//         );
+//     } catch (error) {
+//         next(error);
+//     }
+// };
+
+
+
+
 // ✅ Delete accessory
+const updateAccessoryByStyleNumber = async (req, res, next) => {
+    try {
+        const styleNumbers = req.body;
+
+        if (!Array.isArray(styleNumbers) || styleNumbers.length === 0) {
+            return next(new ApiError(400, "Style numbers must be a non-empty array"));
+        }
+
+        // 1️⃣ Count how many times each style_number appears
+        const styleCountMap = {};
+        for (const style of styleNumbers) {
+            styleCountMap[style] = (styleCountMap[style] || 0) + 1;
+        }
+
+        // 2️⃣ Find all accessories matching those styles
+        const accessories = await Accessory.find({
+            style_number: { $in: Object.keys(styleCountMap).map(Number) }
+        });
+
+        if (accessories.length === 0) {
+            return next(new ApiError(404, "No accessories found for given style numbers"));
+        }
+
+        // 3️⃣ Build count map per accessory_number
+        const accessoryCountMap = {};
+        for (const acc of accessories) {
+            const styleCount = styleCountMap[acc.style_number] || 0; // how many times this style appeared
+            accessoryCountMap[acc.accessory_number] =
+                (accessoryCountMap[acc.accessory_number] || 0) + styleCount;
+        }
+
+        // 4️⃣ Prepare bulk operations
+        const operations = [];
+
+        for (const [accessory_number, count] of Object.entries(accessoryCountMap)) {
+            const anyAccessory = accessories.find(a => a.accessory_number === accessory_number);
+
+            if (!anyAccessory) continue;
+            if (anyAccessory.stock_unit <= 0) continue;
+
+            const newStock = Math.max(anyAccessory.stock_unit - count, 0); // avoid negative stock
+
+            operations.push({
+                updateMany: {
+                    filter: { accessory_number },
+                    update: { $set: { stock_unit: newStock } }
+                }
+            });
+        }
+
+        if (operations.length === 0) {
+            return next(new ApiError(400, "All given accessories are out of stock or invalid"));
+        }
+
+        const result = await Accessory.bulkWrite(operations);
+
+        // 5️⃣ Refetch updated accessories
+        const updatedAccessories = await Accessory.find({
+            style_number: { $in: Object.keys(styleCountMap).map(Number) }
+        });
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    updatedCount: result.modifiedCount,
+                    updatedAccessories
+                },
+                "Accessory stocks reduced correctly and synchronized successfully"
+            )
+        );
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+
 const deleteAccessory = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -177,6 +315,9 @@ const bulkUpsertAccessories = async (req, res, next) => {
     }
 };
 
+
+
+
 module.exports = {
     createAccessory,
     getAllAccessories,
@@ -184,4 +325,5 @@ module.exports = {
     updateAccessory,
     deleteAccessory,
     bulkUpsertAccessories,
+    updateAccessoryByStyleNumber
 };
