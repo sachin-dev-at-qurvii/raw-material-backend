@@ -38,20 +38,58 @@ const createAccessory = async (req, res, next) => {
 };
 
 // ✅ Get all accessories (with optional filters and pagination)
+
+// const getAllAccessories = async (req, res, next) => {
+//     try {
+//         const { page = 1, limit = 20, search = "" } = req.query;
+
+//         const query = search
+//             ? {
+//                 $or: [
+//                     { accessory_number: { $regex: search, $options: "i" } },
+//                     { accessory_name: { $regex: search, $options: "i" } },
+//                     { accessorry_type: { $regex: search, $options: "i" } },
+//                     // { style_number: { $regex: search, $options: "i" } },
+//                 ],
+//             }
+//             : {};
+
+//         const accessories = await Accessory.find(query)
+//             .sort({ createdAt: -1 })
+//             .skip((page - 1) * limit)
+//             .limit(Number(limit));
+
+//         const total = await Accessory.countDocuments(query);
+
+//         return res
+//             .status(200)
+//             .json(
+//                 new ApiResponse(200, "Accessories fetched successfully", { total, page: Number(page), accessories })
+//             );
+//     } catch (error) {
+//         next(error);
+//     }
+// };
+
 const getAllAccessories = async (req, res, next) => {
     try {
         const { page = 1, limit = 20, search = "" } = req.query;
 
-        const query = search
-            ? {
+        let query = {};
+
+        if (search) {
+            const searchNumber = Number(search);
+            const isNumericSearch = !isNaN(searchNumber);
+
+            query = {
                 $or: [
                     { accessory_number: { $regex: search, $options: "i" } },
                     { accessory_name: { $regex: search, $options: "i" } },
                     { accessorry_type: { $regex: search, $options: "i" } },
-                    // { style_number: { $regex: search, $options: "i" } },
+                    ...(isNumericSearch ? [{ style_number: searchNumber }] : []),
                 ],
-            }
-            : {};
+            };
+        }
 
         const accessories = await Accessory.find(query)
             .sort({ createdAt: -1 })
@@ -60,15 +98,18 @@ const getAllAccessories = async (req, res, next) => {
 
         const total = await Accessory.countDocuments(query);
 
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(200, "Accessories fetched successfully", { total, page: Number(page), accessories })
-            );
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                { total, page: Number(page), accessories },
+                "Accessories fetched successfully"
+            )
+        );
     } catch (error) {
         next(error);
     }
 };
+
 
 // ✅ Get single accessory by ID
 const getAccessoryById = async (req, res, next) => {
@@ -130,60 +171,7 @@ const updateAccessory = async (req, res, next) => {
 
 // ******************************* UPDATE ACCESSORY STOCK BY STYLE NUMBERS *******************************
 
-console.log("first")
-// const updateAccessoryByStyleNumber = async (req, res, next) => {
-//     try {
-//         const styleNumbers = req.body;
 
-//         if (!Array.isArray(styleNumbers) || styleNumbers.length === 0) {
-//             return next(new ApiError(400, "Style numbers must be a non-empty array"));
-//         }
-
-//         // Find all accessories matching the given style numbers
-//         const accessories = await Accessory.find({
-//             style_number: { $in: styleNumbers }
-//         });
-
-//         if (accessories.length === 0) {
-//             return next(new ApiError(404, "No accessories found for given style numbers"));
-//         }
-
-//         // Filter out items whose stock_unit is already 0 or less
-//         const validAccessories = accessories.filter(acc => acc.stock_unit > 0);
-
-//         if (validAccessories.length === 0) {
-//             return next(new ApiError(400, "All given accessories are out of stock"));
-//         }
-
-//         // Prepare bulk operations only for valid ones
-//         const operations = validAccessories.map(acc => ({
-//             updateOne: {
-//                 filter: { style_number: acc.style_number },
-//                 update: { $inc: { stock_unit: -1 } }
-//             }
-//         }));
-
-//         const result = await Accessory.bulkWrite(operations);
-
-//         return res.status(200).json(
-//             new ApiResponse(
-//                 200,
-//                 {
-//                     updatedCount: result.modifiedCount,
-//                     skippedCount: styleNumbers.length - validAccessories.length,
-//                 },
-//                 "Accessory stocks updated successfully"
-//             )
-//         );
-//     } catch (error) {
-//         next(error);
-//     }
-// };
-
-
-
-
-// ✅ Delete accessory
 const updateAccessoryByStyleNumber = async (req, res, next) => {
     try {
         const styleNumbers = req.body;
