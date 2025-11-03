@@ -223,7 +223,8 @@ const updateAccessoryByStyleNumber = async (req, res, next) => {
         }
 
         if (operations.length === 0) {
-            return next(new ApiError(400, "All given accessories are out of stock or invalid"));
+            // return next(new ApiError(400, "All given accessories are out of stock or invalid"));
+            return res.status(200).json(new ApiResponse(200, "All given accessories are out of stock or invalid"));
         }
 
         const result = await Accessory.bulkWrite(operations);
@@ -315,3 +316,4 @@ module.exports = {
     bulkUpsertAccessories,
     updateAccessoryByStyleNumber
 };
+
