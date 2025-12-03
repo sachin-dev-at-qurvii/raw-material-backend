@@ -40,67 +40,58 @@ const createStock = async (req, res, next) => {
       return next(new ApiError(400, "Payload must be non-empty array"));
     }
 
+    // Extract all fabric numbers
+    const fabricNumbers = data.map(item => item.fabricNumber).filter(Boolean);
+
+    // Fetch existing stocks in ONE query
+    const existingStocks = await Stock.find({
+      fabricNumber: { $in: fabricNumbers }
+    }).lean();
+
+    const existingMap = new Map(
+      existingStocks.map(item => [item.fabricNumber, true])
+    );
+
     let insertedCount = 0;
     let updatedCount = 0;
-    const results = [];
 
-    for (const item of data) {
+    const bulkOps = data.map(item => {
       const { fabricNumber, ...rest } = item;
-      if (!fabricNumber) continue;
+      if (!fabricNumber) return null;
 
-      const existing = await Stock.findOne({ fabricNumber });
+      const isExisting = existingMap.has(fabricNumber);
 
-      const stock = await Stock.findOneAndUpdate(
-        { fabricNumber },
-        { $set: rest },
-        { new: true, upsert: true }
-      );
+      if (isExisting) updatedCount++;
+      else insertedCount++;
 
-      if (existing) {
-        updatedCount++;
-      } else {
-        insertedCount++;
-      }
+      return {
+        updateOne: {
+          filter: { fabricNumber },
+          update: { $set: rest },
+          upsert: true,
+        },
+      };
+    }).filter(Boolean);
 
-      results.push(stock);
-    }
+    // Run all updates in one shot
+    await Stock.bulkWrite(bulkOps);
+
+    const finalData = await Stock.find({
+      fabricNumber: { $in: fabricNumbers }
+    });
 
     return res.status(200).json(
       new ApiResponse(200, "Stocks processed successfully", {
-        total: results.length,
+        total: finalData.length,
         inserted: insertedCount,
         updated: updatedCount,
-        data: results,
+        data: finalData,
       })
     );
   } catch (error) {
     next(error);
   }
 };
-
-
-// const updateStock = async (req, res, next) => {
-//   try {
-//     const stockId = req.params.id;
-//     const updatedData = req.body;
-//     const stock1 = await Stock.findOne(stockId);
-//     const updatedStock = await Stock.findByIdAndUpdate(stockId, updatedData, { new: true, runValidators: true });
-//     const stock2 = await Stock2.findOne({ fabricNumber: stock1?.fabricNumber })
-
-//     if (stock2) {
-//       stock2.availableStock = 0;
-//       await stock2.save()
-//     }
-
-//     if (!updatedData) {
-//       throw new ApiError(404, "Stock not found");
-//     }
-
-//     res.status(200).json(new ApiResponse(200, "Stock updated successfully", updatedStock));
-//   } catch (error) {
-//     next(error)
-//   }
-// }
 
 
 const updateStock = async (req, res, next) => {
@@ -221,3 +212,4 @@ const deleteStock = async (req, res, next) => {
 
 }
 module.exports = { getStock, createStock, updateStock, deleteStock, updateMultipleStocks, addStockWithExistingStock };
+
