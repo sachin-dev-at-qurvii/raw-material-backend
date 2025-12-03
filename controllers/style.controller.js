@@ -2,54 +2,16 @@ const Style = require("../modals/style.modal");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 
-
-// const createStyle = async (req, res, next) => {
-//   try {
-//     const {
-//       styleNumber,
-//       patternNumber,
-//       styleImage,
-//       fabrics = [],       // expect array of fabrics
-//       accessories = [],   // expect array of accessories
-//     } = req.body;
-
-//     if (!styleNumber) {
-//       throw new ApiError(400, "styleNumber is required");
-//     }
-
-//     const updateData = {
-//       patternNumber,
-//       styleImage,
-//       fabrics,
-//       accessories,
-//     };
-
-//     const style = await Style.findOneAndUpdate(
-//       { styleNumber },
-//       { $set: updateData },
-//       { new: true, upsert: true }
-//     );
-
-//     res.status(200).json(
-//       new ApiResponse(200, "Style created/updated successfully", style)
-//     );
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
-
-// get styles 
-
 const createStyle = async (req, res, next) => {
   try {
-    const payload = Array.isArray(req.body) ? req.body : [req.body]; // allow single or multiple
+    const payload = Array.isArray(req.body) ? req.body : [req.body];
 
-    let insertedCount = 0;
-    let updatedCount = 0;
-    const results = [];
+    if (payload.length === 0) {
+      throw new ApiError(400, "Payload must be non-empty array");
+    }
 
-    for (const styleData of payload) {
+    // Build bulk operations
+    const bulkOps = payload.map((styleData) => {
       const {
         styleNumber,
         patternNumber,
@@ -62,8 +24,6 @@ const createStyle = async (req, res, next) => {
         throw new ApiError(400, "styleNumber is required");
       }
 
-      const existing = await Style.findOne({ styleNumber });
-
       const updateData = {
         patternNumber,
         styleImage,
@@ -71,124 +31,33 @@ const createStyle = async (req, res, next) => {
         accessories,
       };
 
-      const style = await Style.findOneAndUpdate(
-        { styleNumber },
-        { $set: updateData },
-        { new: true, upsert: true }
-      );
+      return {
+        updateOne: {
+          filter: { styleNumber },
+          update: { $set: updateData },
+          upsert: true,
+        },
+      };
+    });
 
-      if (existing) {
-        updatedCount++;
-      } else {
-        insertedCount++;
-      }
+    // Execute bulk write
+    const result = await Style.bulkWrite(bulkOps);
 
-      results.push(style);
-    }
+    const insertedCount = result.upsertedCount;
+    const updatedCount = result.modifiedCount;
 
-    res.status(200).json(
+    return res.status(200).json(
       new ApiResponse(200, "Style(s) processed successfully", {
-        total: results.length,
+        total: insertedCount + updatedCount,
         inserted: insertedCount,
         updated: updatedCount,
-        data: results,
+        raw: result,
       })
     );
   } catch (error) {
     next(error);
   }
 };
-
-
-// const getStyle = async (req, res, next) => {
-//   try {
-//     const { styleNumber, patternNumber } = req.query;
-
-//     if (styleNumber || patternNumber) {
-
-
-//       const style = await Style.aggregate([
-//         {
-//           $match: {
-//             styleNumber: {
-//               $or: [{ styleNumber: Number(styleNumber) }, { patternNumber: patternNumber }]
-//             }
-//           }
-//         },
-//         {
-//           $lookup: {
-//             from: "fabricavgs",
-//             localField: "patternNumber",
-//             foreignField: "patternNumber",
-//             as: "fabricAbgDetails"
-//           }
-//         },
-//         {
-//           $unwind: {
-//             path: "$fabricAbgDetails"
-//           }
-//         },
-//         {
-//           $project: {
-//             styleNumber: 1,
-//             styleImage: 1,
-//             accessories: 1,
-//             patternNumber: 1,
-//             "fabricAbgDetails.patternNumber": 1,
-//             "fabricAbgDetails.fabrics": 1,
-//             "fabricAbgDetails.styleImage": 1,
-
-//           }
-//         }
-
-//       ])
-
-//       if (!style) throw new ApiError(404, "Style not found");
-
-//       return res.status(200).json(new ApiResponse(200, `Style fetched successfully`, style));
-//     } else {
-//       // const styles = await Style.find();
-
-//       const styles = await Style.aggregate(
-//         [
-//           {
-//             $lookup: {
-//               from: "fabricavgs",
-//               localField: "patternNumber",
-//               foreignField: "patternNumber",
-//               as: "fabricAbgDetails"
-//             }
-//           },
-//           {
-//             $unwind: {
-//               path: "$fabricAbgDetails"
-//             }
-//           },
-//           {
-//             $project: {
-//               styleNumber: 1,
-//               styleImage: 1,
-//               accessories: 1,
-//               patternNumber: 1,
-//               "fabricAbgDetails.patternNumber": 1,
-//               "fabricAbgDetails.fabrics": 1,
-//               "fabricAbgDetails.styleImage": 1,
-
-//             }
-//           }
-//         ]
-//       )
-
-
-//       if (styles.length === 0) throw new ApiError(404, "Styles not found");
-
-//       return res.status(200).json(new ApiResponse(200, `${styles.length} styles fetched successfully`, styles));
-//     }
-//   } catch (error) {
-//     next(error);
-//   }
-// };
-
 
 
 // update style
@@ -308,5 +177,6 @@ const deleteStyle = async (req, res, next) => {
     next(error)
   }
 }
+
 
 module.exports = { createStyle, getStyle, updateStyle, deleteStyle }
