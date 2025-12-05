@@ -130,25 +130,28 @@ const updateStock = async (req, res, next) => {
 };
 
 //  ********************************** update stock with existing stock ****************************************
+
 const addStockWithExistingStock = async (req, res, next) => {
   try {
     const { fabricNumber, stockQuantity } = req.body;
-    // Validation
+
     if (!fabricNumber || stockQuantity == null) {
       return next(new ApiError(400, "Fabric number and stock quantity are required"));
     }
 
     const quantity = Number(stockQuantity);
-    if (isNaN(quantity) || quantity <= 0) {
-      return next(new ApiError(400, "Stock quantity must be a positive number"));
+    if (isNaN(quantity) || quantity < 0) {
+      return next(new ApiError(400, "Stock quantity must be a valid number"));
     }
 
-    // Find stock by fabricNumber instead of ID
+    // Overwrite existing stock instead of adding
     const updatedStock = await Stock.findOneAndUpdate(
       { fabricNumber: fabricNumber },
       {
-        $inc: { availableStock: quantity },
-        $set: { updatedAt: new Date() }
+        $set: {
+          availableStock: quantity,  // overwrite instead of increment
+          updatedAt: new Date()
+        }
       },
       {
         new: true,
@@ -161,14 +164,13 @@ const addStockWithExistingStock = async (req, res, next) => {
     }
 
     return res.status(200).json(
-      new ApiResponse(200, updatedStock, "Stock updated successfully")
+      new ApiResponse(200, updatedStock, "Stock overwritten successfully")
     );
 
   } catch (error) {
     next(error);
   }
 };
-
 
 
 // ******************** bulk update ****************************************
@@ -212,4 +214,5 @@ const deleteStock = async (req, res, next) => {
 
 }
 module.exports = { getStock, createStock, updateStock, deleteStock, updateMultipleStocks, addStockWithExistingStock };
+
 
