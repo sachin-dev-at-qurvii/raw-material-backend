@@ -36,22 +36,64 @@ const upsertMappedOrderIdWithStyleNumber = async (req, res, next) => {
     }
 }
 
+// ******************* get mapped order ids records ********************************
+
 const getMappedOrderIdsStyleNumber = async (req, res, next) => {
     try {
-        const mappedOrderIds = await MappedOrderId.find();
-        if (mappedOrderIds.length === 0) {
-            return next(new ApiError(404, "mapped order id not found"));
+        const { page = 1, style_number, rack_space } = req.query;
+
+        const limit = 50;
+        const skip = (Number(page) - 1) * limit;
+
+        // Build Filter
+        const filter = {};
+
+        // Filter by style_number (Number type)
+        if (style_number) {
+            filter.style_number = Number(style_number); // exact match
         }
-        return res.status(200).json(new ApiResponse(200, "Mapped order ids fetched successfully.", mappedOrderIds));
+
+        // Filter by rack_space (String + partial match)
+        if (rack_space) {
+            filter.rack_space = { $regex: new RegExp(rack_space, "i") };
+        }
+
+        // Get total count
+        const totalRecords = await MappedOrderId.countDocuments(filter);
+
+        // Fetch paginated data
+        const mappedOrderIds = await MappedOrderId.find(filter)
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (mappedOrderIds.length === 0) {
+            return next(new ApiError(404, "No mapped order IDs found"));
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, `${mappedOrderIds.length} Mapped order IDs fetched successfully.`, {
+                page: Number(page),
+                per_page: limit,
+                total_records: totalRecords,
+                total_pages: Math.ceil(totalRecords / limit),
+                data: mappedOrderIds,
+            })
+        );
     } catch (error) {
         next(error);
     }
-}
+};
+
+
+
+
 
 const getRackSpaceDetails = async (req, res, next) => {
-    const { style_number } = req.query;
+    const { order_id } = req.query;
     try {
-        const rackSpaceDetails = await MappedOrderId.findOne({ style_number: Number(style_number) });
+        const rackSpaceDetails = await MappedOrderId.findOne({ order_id: Number(order_id) });
         if (!rackSpaceDetails) {
             return next(new ApiError(404, "Rack Space details not found"));
         }
@@ -60,6 +102,8 @@ const getRackSpaceDetails = async (req, res, next) => {
         next(error);
     }
 }
+
+
 
 
 module.exports = { upsertMappedOrderIdWithStyleNumber, getMappedOrderIdsStyleNumber, getRackSpaceDetails }
