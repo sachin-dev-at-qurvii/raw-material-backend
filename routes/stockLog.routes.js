@@ -5,7 +5,7 @@ const {
   getAllStockLog,
   updateStockLogStatus,
   endSession,
-  autoApproveEligibleLogs 
+  autoApproveEligibleLogs,
 } = require('../controllers/stockLog.controller.js');
 
 router.get('/', getAllStockLog);

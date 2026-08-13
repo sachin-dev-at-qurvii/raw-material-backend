@@ -10,5 +10,8 @@ const stockLogSchema = new mongoose.Schema(
   }
 );
 
+stockLogSchema.index({ approved: 1 });
+stockLogSchema.index({ log_id: 1 });
+
 const StockLog = mongoose.model('StockLog', stockLogSchema);
 module.exports = StockLog;

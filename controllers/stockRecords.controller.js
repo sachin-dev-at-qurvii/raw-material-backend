@@ -99,7 +99,6 @@ const createVerifyStocks = async (req, res, next) => {
       !employee_number ||
       !location ||
       !session_id ||
-      
       !source ||
       !width
     ) {

@@ -66,6 +66,19 @@ stockRecordsSchema.pre('insertMany', function (next, docs) {
   next();
 });
 
+// ============ INDEXES ============
+// For auto-approve: find sessions with no pending records
+stockRecordsSchema.index({ session_id: 1, status: 1 });
+
+// For fetching records by session
+stockRecordsSchema.index({ session_id: 1 });
+
+// For filtering by status
+stockRecordsSchema.index({ status: 1 });
+
+// For fabric lookups (if needed)
+stockRecordsSchema.index({ fabric_number: 1 });
+
 const StockRecords = mongoose.model('StockRecords', stockRecordsSchema);
 
 module.exports = StockRecords;
