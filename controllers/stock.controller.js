@@ -1,7 +1,7 @@
-const Stock = require("../modals/stock.modal");
-const Stock2 = require("../modals/stock2.modal");
-const ApiError = require("../utils/ApiError");
-const ApiResponse = require("../utils/ApiResponse");
+const Stock = require('../modals/stock.modal');
+const Stock2 = require('../modals/stock2.modal');
+const ApiError = require('../utils/ApiError');
+const ApiResponse = require('../utils/ApiResponse');
 
 // get stock
 const getStock = async (req, res, next) => {
@@ -13,75 +13,70 @@ const getStock = async (req, res, next) => {
     if (fabricNumber) {
       stock = await Stock.findOne({ fabricNumber: Number(fabricNumber) });
 
-
       if (!stock) {
-        throw new ApiError(404, "Stock not found");
+        throw new ApiError(404, 'Stock not found');
       }
 
-      res.status(200).json(new ApiResponse(200, "Stock fetched successfully", stock));
+      res.status(200).json(new ApiResponse(200, 'Stock fetched successfully', stock));
     } else {
       stock = await Stock.find(); // return all stocks
-      res.status(200).json(new ApiResponse(200, "All stocks fetched successfully", stock));
+      res.status(200).json(new ApiResponse(200, 'All stocks fetched successfully', stock));
     }
-
   } catch (error) {
     next(error);
   }
 };
-
-
-
 
 const createStock = async (req, res, next) => {
   try {
     const data = req.body;
 
     if (!Array.isArray(data) || data.length === 0) {
-      return next(new ApiError(400, "Payload must be non-empty array"));
+      return next(new ApiError(400, 'Payload must be non-empty array'));
     }
 
     // Extract all fabric numbers
-    const fabricNumbers = data.map(item => item.fabricNumber).filter(Boolean);
+    const fabricNumbers = data.map((item) => item.fabricNumber).filter(Boolean);
 
     // Fetch existing stocks in ONE query
     const existingStocks = await Stock.find({
-      fabricNumber: { $in: fabricNumbers }
+      fabricNumber: { $in: fabricNumbers },
     }).lean();
 
-    const existingMap = new Map(
-      existingStocks.map(item => [item.fabricNumber, true])
-    );
+    const existingMap = new Map(existingStocks.map((item) => [item.fabricNumber, true]));
 
     let insertedCount = 0;
     let updatedCount = 0;
 
-    const bulkOps = data.map(item => {
-      const { fabricNumber, ...rest } = item;
-      if (!fabricNumber) return null;
+    const bulkOps = data
+      .map((item) => {
+        const { fabricNumber, ...rest } = item;
+        if (!fabricNumber) return null;
 
-      const isExisting = existingMap.has(fabricNumber);
+        const isExisting = existingMap.has(fabricNumber);
 
-      if (isExisting) updatedCount++;
-      else insertedCount++;
+        if (isExisting) updatedCount++;
+        else insertedCount++;
 
-      return {
-        updateOne: {
-          filter: { fabricNumber },
-          update: { $set: rest },
-          upsert: true,
-        },
-      };
-    }).filter(Boolean);
+        return {
+          updateOne: {
+            filter: { fabricNumber },
+            update: { $set: rest },
+            upsert: true,
+          },
+        };
+      })
+      .filter(Boolean);
 
     // Run all updates in one shot
     await Stock.bulkWrite(bulkOps);
 
     const finalData = await Stock.find({
-      fabricNumber: { $in: fabricNumbers }
+      fabricNumber: { $in: fabricNumbers },
     });
 
     return res.status(200).json(
-      new ApiResponse(200, "Stocks processed successfully", {
+      new ApiResponse(200, 'Stocks processed successfully', {
         total: finalData.length,
         inserted: insertedCount,
         updated: updatedCount,
@@ -93,7 +88,6 @@ const createStock = async (req, res, next) => {
   }
 };
 
-
 const updateStock = async (req, res, next) => {
   try {
     const stockId = req.params.id;
@@ -103,7 +97,7 @@ const updateStock = async (req, res, next) => {
     // 1️⃣ Find the existing stock
     const stock1 = await Stock.findById(stockId);
     if (!stock1) {
-      throw new ApiError(404, "Stock not found");
+      throw new ApiError(404, 'Stock not found');
     }
 
     // 2️⃣ Update stock with validation
@@ -115,15 +109,13 @@ const updateStock = async (req, res, next) => {
     // 3️⃣ Find related Stock2 using fabricNumber
     const stock2 = await Stock2.findOne({ fabricNumber: stock1.fabricNumber });
 
-    if (stock2 && fabric_source === "Store2") {
+    if (stock2 && fabric_source === 'Store2') {
       stock2.availableStock = 0; // if this is intentional
       await stock2.save();
     }
 
     // 4️⃣ Send success response
-    res
-      .status(200)
-      .json(new ApiResponse(200, "Stock updated successfully", updatedStock));
+    res.status(200).json(new ApiResponse(200, 'Stock updated successfully', updatedStock));
   } catch (error) {
     next(error);
   }
@@ -136,12 +128,12 @@ const addStockWithExistingStock = async (req, res, next) => {
     const { fabricNumber, stockQuantity } = req.body;
 
     if (!fabricNumber || stockQuantity == null) {
-      return next(new ApiError(400, "Fabric number and stock quantity are required"));
+      return next(new ApiError(400, 'Fabric number and stock quantity are required'));
     }
 
     const quantity = Number(stockQuantity);
     if (isNaN(quantity) || quantity < 0) {
-      return next(new ApiError(400, "Stock quantity must be a valid number"));
+      return next(new ApiError(400, 'Stock quantity must be a valid number'));
     }
 
     // Overwrite existing stock instead of adding
@@ -149,13 +141,13 @@ const addStockWithExistingStock = async (req, res, next) => {
       { fabricNumber: fabricNumber },
       {
         $set: {
-          availableStock: quantity,  // overwrite instead of increment
-          updatedAt: new Date()
-        }
+          availableStock: quantity, // overwrite instead of increment
+          updatedAt: new Date(),
+        },
       },
       {
         new: true,
-        runValidators: true
+        runValidators: true,
       }
     );
 
@@ -163,28 +155,25 @@ const addStockWithExistingStock = async (req, res, next) => {
       return next(new ApiError(404, `Stock not found for fabric number: ${fabricNumber}`));
     }
 
-    return res.status(200).json(
-      new ApiResponse(200, updatedStock, "Stock overwritten successfully")
-    );
-
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedStock, 'Stock overwritten successfully'));
   } catch (error) {
     next(error);
   }
 };
 
-
 // ******************** bulk update ****************************************
 const updateMultipleStocks = async (req, res, next) => {
-
   try {
     const { updates } = req.body;
 
     if (!Array.isArray(updates) || updates.length === 0) {
-      throw new ApiError(400, "No updates provided");
+      throw new ApiError(400, 'No updates provided');
     }
 
     // Create bulk operations array
-    const bulkOps = updates.map(item => ({
+    const bulkOps = updates.map((item) => ({
       updateOne: {
         filter: { _id: item.id },
         update: { $set: { availableStock: item.availableStock } },
@@ -193,9 +182,7 @@ const updateMultipleStocks = async (req, res, next) => {
 
     const result = await Stock.bulkWrite(bulkOps, { ordered: false });
 
-    res
-      .status(200)
-      .json(new ApiResponse(200, "Bulk stock update successful", result));
+    res.status(200).json(new ApiResponse(200, 'Bulk stock update successful', result));
   } catch (error) {
     next(error);
   }
@@ -210,9 +197,107 @@ const deleteStock = async (req, res, next) => {
     throw new ApiError(404, `Stock not found for delete`);
   }
 
-  res.status(200).json(new ApiResponse(200, `${deletedStock.fabricNumber} deleted successfully`, deletedStock.fabricNumber))
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        `${deletedStock.fabricNumber} deleted successfully`,
+        deletedStock.fabricNumber
+      )
+    );
+};
 
-}
-module.exports = { getStock, createStock, updateStock, deleteStock, updateMultipleStocks, addStockWithExistingStock };
+// get vendor source by grouping
+const vendorSource = async (req, res, next) => {
+  try {
+    const result = await Stock.aggregate([
+      {
+        $group: {
+          _id: '$vendor_source',
+          linked_fabric: { $sum: 1 },
+          blocked_stock_days: { $first: '$blocked_stock_days' },
+        },
+      },
+      {
+        $match: {
+          _id: { $nin: ['', '#N/A', null] },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          vendor_source: '$_id',
+          linked_fabric: 1,
+          blocked_stock_days: 1,
+        },
+      },
+      {
+        $sort: {
+          linked_fabric: -1,
+        },
+      },
+    ]);
 
+    if (result.length === 0) {
+      throw new ApiError(404, `Vendors source not found`);
+    }
+    res
+      .status(200)
+      .json(new ApiResponse(200, { message: 'Vendor Source Fetched Successfully' }, result));
+  } catch (error) {
+    next(error);
+  }
+};
 
+// update blocked stocks for fabrics
+const setBlockedStocksForVendor = async (req, res, next) => {
+  try {
+    const { vendor_source, blocked_stock_days } = req.body;
+
+    const result = await Stock.updateMany({ vendor_source }, { $set: { blocked_stock_days } });
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          `Blocked stock days set to ${blocked_stock_days} for: ${vendor_source}`,
+          result.modifiedCount
+        )
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
+// update status
+const updateStatus = async (req, res, next) => {
+  try {
+    const { id, status } = req.body;
+    if (!id) {
+      throw new ApiError(404, 'id and status is required');
+    }
+    const response = await Stock.findByIdAndUpdate(
+      id,
+      {
+        status,
+      },
+      { new: true }
+    );
+    res.status(200).json(new ApiResponse(200, `Status updated for ${id}`, response));
+  } catch (error) {
+    next(error);
+  }
+};
+module.exports = {
+  getStock,
+  createStock,
+  updateStock,
+  deleteStock,
+  updateMultipleStocks,
+  addStockWithExistingStock,
+  vendorSource,
+  setBlockedStocksForVendor,
+  updateStatus,
+};

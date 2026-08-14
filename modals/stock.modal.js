@@ -1,30 +1,45 @@
-const mongoose = require("mongoose");
-const stockSchema = new mongoose.Schema({
+const mongoose = require('mongoose');
+const stockSchema = new mongoose.Schema(
+  {
     fabricName: {
-        type: String,
+      type: String,
     },
     fabricNumber: {
-        type: Number,
+      type: Number,
     },
     styleNumbers: {
-        type: [Number],
-        default: [],
+      type: [Number],
+      default: [],
     },
     availableStock: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     location: {
-        type: String,
-        default: "Default",
+      type: String,
+      default: 'Default',
     },
     fabric_source: {
-        type: String,
-        default: "Vender"
-    }
-}, {
-    timestamps: true
-});
+      type: String,
+      default: 'Vender',
+    },
+    // vendor source and stock blocked quantity days fields
+    vendor_source: {
+      type: String,
+    },
+    blocked_stock_days: {
+      type: Number,
+      default: 7,
+    },
+    status: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-const Stock = mongoose.model("Stock", stockSchema);
+const Stock = mongoose.model('Stock', stockSchema);
 module.exports = Stock;
