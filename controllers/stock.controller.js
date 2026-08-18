@@ -19,7 +19,9 @@ const getStock = async (req, res, next) => {
 
       res.status(200).json(new ApiResponse(200, 'Stock fetched successfully', stock));
     } else {
-      stock = await Stock.find(); // return all stocks
+      stock = await Stock.find().sort({
+        availableStock: -1,
+      }); // return all stocks
       res.status(200).json(new ApiResponse(200, 'All stocks fetched successfully', stock));
     }
   } catch (error) {
