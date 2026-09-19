@@ -292,6 +292,52 @@ const updateStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+// ************************* new controller for stock minus **************************
+const shipStock = async (req, res, next) => {
+  try {
+    const { fabric_number, quantity } = req.body;
+
+    if (!fabric_number || quantity === undefined || quantity === null) {
+      throw new ApiError(409, 'fabric_number and quantity required');
+    }
+
+    const numericQuantity = Number(quantity);
+    if (!Number.isFinite(numericQuantity) || numericQuantity <= 0) {
+      throw new ApiError(400, 'quantity must be a positive number');
+    }
+
+    // Atomic: only decrements if enough stock exists at the moment of update
+    const updatedStock = await Stock.findOneAndUpdate(
+      {
+        fabricNumber: fabric_number,
+        availableStock: { $gte: numericQuantity }, // guard
+      },
+      {
+        $inc: { availableStock: -numericQuantity }, // atomic decrement
+      },
+      { new: true }
+    );
+
+    // If null → either fabric doesn't exist OR not enough stock
+    if (!updatedStock) {
+      const exists = await Stock.exists({ fabricNumber: fabric_number });
+      if (!exists) {
+        throw new ApiError(404, `Stock not found for fabric ${fabric_number}`);
+      }
+      throw new ApiError(400, 'Not sufficient stock');
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, `Stock updated for ${fabric_number}`, {
+        updatedStock: updatedStock.availableStock,
+        stock: updatedStock,
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 module.exports = {
   getStock,
   createStock,
@@ -302,4 +348,5 @@ module.exports = {
   vendorSource,
   setBlockedStocksForVendor,
   updateStatus,
+  shipStock,
 };

@@ -9,6 +9,7 @@ const {
   vendorSource,
   setBlockedStocksForVendor,
   updateStatus,
+  shipStock,
 } = require('../controllers/stock.controller');
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.route('/set-blocked-days').put(setBlockedStocksForVendor);
 router.route('/status').put(updateStatus);
 router.route('/:id').put(updateStock);
 router.route('/:id').delete(deleteStock);
+router.route('/ship').post(shipStock);
 
 module.exports = router;
