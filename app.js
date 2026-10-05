@@ -27,6 +27,8 @@ const { syncFabricAverage } = require('./cron/fabricAverageSync.cron.js');
 const { syncStyleFabricMapping } = require('./cron/styleFabricMappingSync.cron.js');
 const { syncFabricPatternAndStyle } = require('./cron/fabricPatternAndStyleSync.cron.js');
 
+const cronRoutes = require('./routes/cronRoutes/cron.routes.js');
+
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -68,6 +70,9 @@ app.use('/api/v1/order-id-mapping', orderidMappedRoutes);
 
 // discount routes
 app.use('/api/v1/discount', discountRoutes);
+
+// cron jobs
+app.use('/api/v1/crons', cronRoutes);
 
 app.use(globalErrorHandler);
 
