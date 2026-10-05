@@ -102,8 +102,10 @@ const syncStyleFabricMapping = async () => {
       *********************************************************
       `
     );
+    return resultSummary;
   } catch (error) {
     console.error('Failed to sync fabric pattern and style :: ', error?.message);
+    throw new ApiError(500, 'Failed to sync fabric pattern and style', error.message);
   }
 };
 

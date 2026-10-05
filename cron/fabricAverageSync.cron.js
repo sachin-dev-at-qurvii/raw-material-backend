@@ -51,6 +51,7 @@ const syncFabricAverage = async () => {
 
       *********************************************************
       `);
+    return summary;
   } catch (error) {
     console.error('Error while syncing Fabric Average :: ', error?.message);
 

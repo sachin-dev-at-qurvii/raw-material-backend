@@ -78,6 +78,7 @@ const syncFabricPatternAndStyle = async () => {
 
       *********************************************************
     `);
+    return summary;
   } catch (error) {
     console.error('Failed to sync fabric pattern and style :: ', error?.message);
 
