@@ -22,6 +22,11 @@ const stockAdditionVerifyRoutes = require('./routes/stockRecords.routes.js');
 const stockLogRoutes = require('./routes/stockLog.routes.js');
 
 const accessoryRoutes = require('./routes/accessory.routes.js');
+// cron jobs
+const { syncFabricAverage } = require('./cron/fabricAverageSync.cron.js');
+const { syncStyleFabricMapping } = require('./cron/styleFabricMappingSync.cron.js');
+const { syncFabricPatternAndStyle } = require('./cron/fabricPatternAndStyleSync.cron.js');
+
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -70,5 +75,7 @@ app.use(globalErrorHandler);
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`The server is running on ${PORT} number.`);
+    // syncFabricPatternAndStyle();
+    syncStyleFabricMapping();
   });
 });
