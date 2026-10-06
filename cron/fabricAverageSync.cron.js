@@ -59,8 +59,7 @@ const syncFabricAverage = async () => {
 };
 
 // Run every 3 hours
-// cron.schedule('0 */3 * * *', async () => {
-cron.schedule('* * * * *', async () => {
+cron.schedule('20 */2 * * *', async () => {
   console.log(`Fabric Average Cron Started :: ${new Date().toISOString()}`);
 
   try {

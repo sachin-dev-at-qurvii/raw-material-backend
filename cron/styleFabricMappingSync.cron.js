@@ -110,8 +110,7 @@ const syncStyleFabricMapping = async () => {
 };
 
 // Run every 2 hours
-// cron.schedule('0 */2 * * *', async () => {
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 */2 * * *', async () => {
   console.log('Fabric pattern and style cron started :: ', new Date().toISOString());
 
   try {
