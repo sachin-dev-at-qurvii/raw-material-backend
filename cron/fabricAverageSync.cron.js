@@ -1,5 +1,4 @@
 const cron = require('node-cron');
-
 const FabricAvg = require('../modals/fabricAvg.model');
 const { fetchStyleAverageDataFromGoogleSheet } = require('../services/googleSheet.service');
 
@@ -60,7 +59,8 @@ const syncFabricAverage = async () => {
 };
 
 // Run every 3 hours
-cron.schedule('0 */3 * * *', async () => {
+// cron.schedule('0 */3 * * *', async () => {
+cron.schedule('* * * * *', async () => {
   console.log(`Fabric Average Cron Started :: ${new Date().toISOString()}`);
 
   try {
@@ -69,17 +69,6 @@ cron.schedule('0 */3 * * *', async () => {
     console.error('Fabric Average Cron Failed :: ', error?.message);
   }
 });
-
-// Run once when server starts
-const firstRun = async () => {
-  try {
-    await syncFabricAverage();
-  } catch (error) {
-    console.error('Fabric Average First Run Failed :: ', error?.message);
-  }
-};
-
-firstRun();
 
 module.exports = {
   syncFabricAverage,

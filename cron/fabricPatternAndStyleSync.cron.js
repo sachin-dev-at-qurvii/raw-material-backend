@@ -1,3 +1,4 @@
+const cron = require('node-cron');
 const Style = require('../modals/style.modal');
 const { fetchFabricNoFromFabricAverageSheet } = require('../services/googleSheet.service');
 const ApiError = require('../utils/ApiError');
@@ -86,41 +87,16 @@ const syncFabricPatternAndStyle = async () => {
   }
 };
 
-// --------------------------------------------------
-// Run immediately when server starts
-// Then run every 2 hours 10 minutes
-// --------------------------------------------------
-
-const CRON_INTERVAL =
-  2 * 60 * 60 * 1000 + // 2 hours
-  10 * 60 * 1000; // 10 minutes
-
-let isSyncRunning = false;
-
-const runFabricPatternAndStyleSync = async () => {
-  if (isSyncRunning) {
-    console.log('Fabric Pattern and Style Sync is already running. Skipping...');
-    return;
-  }
-
-  isSyncRunning = true;
+// cron.schedule('10 */2 * * *', async () => {
+cron.schedule('* * * * *', async () => {
+  console.log(`Fabric Pattern & Style Cron Started :: ${new Date().toISOString()}`);
 
   try {
-    console.log('Fabric Pattern and Style Sync started :: ', new Date().toISOString());
-
     await syncFabricPatternAndStyle();
   } catch (error) {
-    console.error('Fabric Pattern and Style Sync failed :: ', error?.message);
-  } finally {
-    isSyncRunning = false;
+    console.error('Fabric Pattern & Style Cron Failed :: ', error?.message);
   }
-};
-
-// Run once when server starts
-runFabricPatternAndStyleSync();
-
-// Run every 2 hours 10 minutes
-setInterval(runFabricPatternAndStyleSync, CRON_INTERVAL);
+});
 
 module.exports = {
   syncFabricPatternAndStyle,

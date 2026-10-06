@@ -80,7 +80,5 @@ app.use(globalErrorHandler);
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`The server is running on ${PORT} number.`);
-    // syncFabricPatternAndStyle();
-    syncStyleFabricMapping();
   });
 });

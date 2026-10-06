@@ -110,10 +110,15 @@ const syncStyleFabricMapping = async () => {
 };
 
 // Run every 2 hours
-cron.schedule('0 */2 * * *', async () => {
+// cron.schedule('0 */2 * * *', async () => {
+cron.schedule('* * * * *', async () => {
   console.log('Fabric pattern and style cron started :: ', new Date().toISOString());
 
-  await syncStyleFabricMapping();
+  try {
+    await syncStyleFabricMapping();
+  } catch (error) {
+    console.error('Fabric Style Mapping Cron Failed :: ', error?.message);
+  }
 });
 
 module.exports = {
