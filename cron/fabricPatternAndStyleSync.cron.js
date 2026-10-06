@@ -88,7 +88,7 @@ const syncFabricPatternAndStyle = async () => {
 };
 
 // cron.schedule('10 */2 * * *', async () => {
-cron.schedule('* * * * *', async () => {
+cron.schedule('2 * * * *', async () => {
   console.log(`Fabric Pattern & Style Cron Started :: ${new Date().toISOString()}`);
 
   try {
